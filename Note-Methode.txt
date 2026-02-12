@@ -1,12 +1,35 @@
 NOTE_METHODE
-Définition du problème :
-	L’objectif est de prédire la demande horaire de vélos pour la semaine suivante à partir des données Capital Bikeshare 2024–2025. La granularité horaire est pertinente car la demande présente des pics marqués dans la journée. Une prévision à ce niveau permet d’anticiper les besoins opérationnels (rééquilibrage, maintenance, planification des équipes). Un horizon d’une semaine constitue un bon compromis entre précision et utilité métier.
-Stratégie de validation :
-	Les données ont été nettoyées de manière pragmatique : suppression des dates manquantes, des doublons (ride_id) et des durées incohérentes (? 0 ou > 24h). Les timestamps ne contenant pas de fuseau horaire, ils ont été traités comme des heures locales. Les trajets ont ensuite été agrégés en série horaire continue afin d’éviter toute discontinuité qui aurait biaisé les variables retardées.
-	La validation repose sur un split temporel strict : entraînement de janvier 2024 à septembre 2025, validation en octobre 2025, puis test final sur novembre–décembre 2025. Aucun mélange des données n’a été effectué et les lags (24h, 168h) utilisent uniquement des observations passées, garantissant l’absence de data leakage.
-Baseline vs Amélioration : 
-	Une baseline robuste a été définie en prédisant la même heure que la semaine précédente (lag 168h). Elle atteint un MAE d’environ 151 et un sMAPE de 34 % sur le test. Un modèle RandomForest utilisant des variables calendaires simples et des lags améliore significativement ces performances avec un MAE d’environ 116, un sMAPE de 29 % et un MASE de 0.77, soit environ 24 % de gain par rapport à la baseline.
-Limites du modèle : 
-	L’analyse de robustesse montre que le modèle capture correctement les patterns réguliers. Environ 9.56 % des heures présentent une erreur supérieure à 300 trajets, indicateur utile d’un point de vue opérationnel. En revanche, la performance se dégrade fortement lors d’événements exceptionnels : sur Thanksgiving et Noël, le MAE monte à environ 336, soit près de trois fois l’erreur moyenne globale. Cela met en évidence la sensibilité du modèle aux chocs exogènes non modélisés.
+
+DÃ©finition du problÃ¨me :
+	Lâ€™objectif est de prÃ©dire la demande horaire de vÃ©los pour la semaine suivante Ã  partir des donnÃ©es Capital Bikeshare 2024â€“2025. 
+La granularitÃ© horaire est pertinente car la demande prÃ©sente des pics marquÃ©s dans la journÃ©e. 
+Une prÃ©vision Ã  ce niveau permet dâ€™anticiper les besoins opÃ©rationnels (rÃ©Ã©quilibrage, maintenance, planification des Ã©quipes). 
+Un horizon dâ€™une semaine constitue un bon compromis entre prÃ©cision et utilitÃ© mÃ©tier.
+
+
+StratÃ©gie de validation :
+	Les donnÃ©es ont Ã©tÃ© nettoyÃ©es de maniÃ¨re pragmatique : suppression des dates manquantes, des doublons (ride_id) et des durÃ©es incohÃ©rentes (? 0 ou > 24h). 
+Les timestamps ne contenant pas de fuseau horaire, ils ont Ã©tÃ© traitÃ©s comme des heures locales. 
+Les trajets ont ensuite Ã©tÃ© agrÃ©gÃ©s en sÃ©rie horaire continue afin dâ€™Ã©viter toute discontinuitÃ© qui aurait biaisÃ© les variables retardÃ©es.
+	La validation repose sur un split temporel strict : entraÃ®nement de janvier 2024 Ã  septembre 2025, validation en octobre 2025, puis test final sur novembreâ€“dÃ©cembre 2025. 
+Aucun mÃ©lange des donnÃ©es nâ€™a Ã©tÃ© effectuÃ© et les lags (24h, 168h) utilisent uniquement des observations passÃ©es, garantissant lâ€™absence de data leakage.
+
+
+Baseline vs AmÃ©lioration : 
+	Une baseline robuste a Ã©tÃ© dÃ©finie en prÃ©disant la mÃªme heure que la semaine prÃ©cÃ©dente (lag 168h). 
+Elle atteint un MAE dâ€™environ 151 et un sMAPE de 34 % sur le test. 
+Un modÃ¨le RandomForest utilisant des variables calendaires simples et des lags amÃ©liore significativement ces performances avec un MAE dâ€™environ 116, un sMAPE de 29 % et un MASE de 0.77, soit environ 24 % de gain par rapport Ã  la baseline.
+
+
+Limites du modÃ¨le : 
+	Lâ€™analyse de robustesse montre que le modÃ¨le capture correctement les patterns rÃ©guliers. 
+Environ 9.56 % des heures prÃ©sentent une erreur supÃ©rieure Ã  300 trajets, indicateur utile dâ€™un point de vue opÃ©rationnel. 
+En revanche, la performance se dÃ©grade fortement lors dâ€™Ã©vÃ©nements exceptionnels : sur Thanksgiving et NoÃ«l, le MAE monte Ã  environ 336, soit prÃ¨s de trois fois lâ€™erreur moyenne globale. 
+Cela met en Ã©vidence la sensibilitÃ© du modÃ¨le aux chocs exogÃ¨nes non modÃ©lisÃ©s.
+
+
 Vision MLOps
-	En production, le pipeline pourrait être automatisé via un job planifié exécuté chaque semaine afin de mettre à jour les données et générer les prévisions. Les métriques (MAE, sMAPE) seraient recalculées automatiquement à réception des données réelles afin de suivre la performance dans le temps. Un réentraînement mensuel semble adapté, avec déclenchement automatique en cas de dérive significative (par exemple +10 % de MAE sur une fenêtre glissante). Chaque version du modèle serait sauvegardée afin de permettre un retour arrière si nécessaire. En cas de défaillance du modèle, la baseline lag 168h servirait de solution de secours pour garantir la continuité opérationnelle.
+	En production, le pipeline pourrait Ãªtre automatisÃ© via un job planifiÃ© exÃ©cutÃ© chaque semaine afin de mettre Ã  jour les donnÃ©es et gÃ©nÃ©rer les prÃ©visions. 
+Les mÃ©triques (MAE, sMAPE) seraient recalculÃ©es automatiquement Ã  rÃ©ception des donnÃ©es rÃ©elles afin de suivre la performance dans le temps. 
+Un rÃ©entraÃ®nement mensuel semble adaptÃ©, avec dÃ©clenchement automatique en cas de dÃ©rive significative (par exemple +10 % de MAE sur une fenÃªtre glissante). 
+Chaque version du modÃ¨le serait sauvegardÃ©e afin de permettre un retour arriÃ¨re si nÃ©cessaire. En cas de dÃ©faillance du modÃ¨le, la baseline lag 168h servirait de solution de secours pour garantir la continuitÃ© opÃ©rationnelle.
